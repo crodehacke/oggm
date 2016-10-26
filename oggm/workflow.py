@@ -5,6 +5,7 @@ from __future__ import division
 import logging
 import os
 from shutil import rmtree
+import collections
 # External libs
 import pandas as pd
 import multiprocessing as mp
@@ -12,40 +13,54 @@ import multiprocessing as mp
 # Locals
 import oggm
 from oggm import cfg, tasks, utils
-from oggm.utils import download_lock
 
+# MPI
+try:
+    import oggm.mpi as ogmpi
+    _have_ogmpi = True
+except ImportError:
+    _have_ogmpi = False
 
 # Module logger
 log = logging.getLogger(__name__)
 
 
-def _init_pool_globals(_dl_lock, _cfg_contents):
-    global download_lock
-    download_lock = _dl_lock
-
-    for v, c in _cfg_contents:
-        setattr(cfg, v, c)
+def _init_pool_globals(_cfg_contents):
+    cfg.unpack_config(_cfg_contents)
 
 
 def _init_pool():
     """Necessary because at import time, cfg might be unitialized"""
-
-    cfg_variables = [
-        'IS_INITIALIZED',
-        'CONTINUE_ON_ERROR',
-        'PARAMS',
-        'PATHS',
-        'BASENAMES'
-    ]
-
-    cfg_contents = []
-    for v in cfg_variables:
-        cfg_contents.append((v, getattr(cfg, v)))
-
-    return mp.Pool(cfg.PARAMS['mp_processes'], initializer=_init_pool_globals, initargs=(download_lock, cfg_contents))
+    cfg_contents = cfg.pack_config()
+    return mp.Pool(cfg.PARAMS['mp_processes'], initializer=_init_pool_globals, initargs=(cfg_contents,))
 
 
-def execute_entity_task(task, gdirs):
+def _merge_dicts(*dicts):
+    r = {}
+    for d in dicts:
+        r.update(d)
+    return r
+
+
+class _pickle_copier(object):
+    """Pickleable alternative to functools.partial,
+    Which is not pickleable in python2 and thus doesn't work
+    with Multiprocessing."""
+
+    def __init__(self, func, kwargs):
+        self.call_func = func
+        self.out_kwargs = kwargs
+
+    def __call__(self, gdir):
+        if isinstance(gdir, collections.Sequence):
+            gdir, gdir_kwargs = gdir
+            gdir_kwargs = _merge_dicts(self.out_kwargs, gdir_kwargs)
+            return self.call_func(gdir, **gdir_kwargs)
+        else:
+            return self.call_func(gdir, **self.out_kwargs)
+
+
+def execute_entity_task(task, gdirs, **kwargs):
     """Execute a task on gdirs.
 
     If you asked for multiprocessing, it will do it.
@@ -56,14 +71,24 @@ def execute_entity_task(task, gdirs):
         the entity task to apply
     gdirs: list
         the list of oggm.GlacierDirectory to process
+        optionally, each list element can be a tuple, with the first element being
+        the oggm.GlacierDirectory, and the second element a dict that will be passed
+        to the task function as **kwargs.
     """
+
+    pc = _pickle_copier(task, kwargs)
+
+    if _have_ogmpi:
+        if ogmpi.OGGM_MPI_COMM is not None:
+            ogmpi.mpi_master_spin_tasks(pc, gdirs)
+            return
 
     if cfg.PARAMS['use_multiprocessing']:
         mppool = _init_pool()
-        mppool.map(task, gdirs, chunksize=1)
+        mppool.map(pc, gdirs, chunksize=1)
     else:
         for gdir in gdirs:
-            task(gdir)
+            pc(gdir)
 
 
 def init_glacier_regions(rgidf, reset=False, force=False):
@@ -82,11 +107,14 @@ def init_glacier_regions(rgidf, reset=False, force=False):
             rmtree(fpath)
 
     gdirs = []
+    new_gdirs = []
     for _, entity in rgidf.iterrows():
         gdir = oggm.GlacierDirectory(entity, reset=reset)
         if not os.path.exists(gdir.get_filepath('dem')):
-            tasks.define_glacier_region(gdir, entity=entity)
+            new_gdirs.append((gdir, dict(entity=entity)))
         gdirs.append(gdir)
+
+    execute_entity_task(tasks.define_glacier_region, new_gdirs)
 
     return gdirs
 

@@ -1,3 +1,5 @@
+.. _installing.oggm:
+
 Installing OGGM
 ===============
 
@@ -60,8 +62,8 @@ Testing:
     - nose
 
 Other libraries:
+    - filelock
     - `salem <https://github.com/fmaussion/salem>`_
-    - `cleo <https://github.com/fmaussion/cleo>`_
     - `motionless (py3) <https://github.com/fmaussion/motionless>`_
 
 Optional:
@@ -98,14 +100,26 @@ window, type::
 
     conda create --name oggm_env python=3.5
 
+
 You can of course use any other name for your environment.
+
+.. warning::
+
+    The windows build of one of OGGM dependencies is not working properly
+    with python 3.5. The only solution until `this problem`_ is resolved is
+    to install OGGM in a python 3.4 environment. That is: type ``python=3.4``
+    instead of ``python=3.5`` in the command above. All the rest should
+    hopefully work the same.
+
+
 Don't forget to activate it before going on::
 
     source activate oggm_env
 
-(on windows: `activate oggm_env`)
+(on windows: ``activate oggm_env``)
 
 .. _environment: http://conda.pydata.org/docs/using/envs.html
+.. _this problem: https://github.com/conda-forge/geopandas-feedstock/issues/9
 
 
 Packages
@@ -113,7 +127,7 @@ Packages
 
 Install the packages from the `conda-forge`_ channel::
 
-    conda install -c conda-forge geopandas matplotlib Pillow joblib netCDF4 scikit-image configobj nose pyproj numpy krb5 rasterio xarray
+    conda install -c conda-forge geopandas matplotlib Pillow joblib netCDF4 scikit-image configobj nose pyproj numpy krb5 rasterio xarray filelock
 
 .. warning::
 
@@ -143,7 +157,6 @@ After success, install the following packages from Fabien's github::
 
     pip install git+https://github.com/fmaussion/motionless.git
     pip install git+https://github.com/fmaussion/salem.git
-    pip install git+https://github.com/fmaussion/cleo.git
 
 
 .. _conda-forge: https://conda-forge.github.io/
@@ -155,7 +168,7 @@ OGGM
 ~~~~
 
 We recommend to clone the git repository (or a fork if you want
-to participate to the development)::
+to participate to the development, see also :ref:`contributing`)::
 
    git clone https://github.com/OGGM/oggm.git
 
@@ -174,8 +187,7 @@ And install OGGM in development mode::
     code repository will be taken into account the next time you will
     ``import oggm``. This means that you are going to
     be able to update OGGM with a simple `git pull`_ from the head of the
-    cloned repository (but also that if you make changes in this repository,
-    this might brake things).
+    cloned repository.
 
 .. _git pull: https://git-scm.com/docs/git-pull
 
@@ -315,13 +327,12 @@ using the system binaries::
 
 Install further stuffs::
 
-    $ pip install pyproj rasterio Pillow geopandas netcdf4 scikit-image configobj joblib xarray progressbar2
+    $ pip install pyproj rasterio Pillow geopandas netcdf4 scikit-image configobj joblib xarray filelock progressbar2
 
 And the external libraries::
 
     $ pip install git+https://github.com/fmaussion/motionless.git
     $ pip install git+https://github.com/fmaussion/salem.git
-    $ pip install git+https://github.com/fmaussion/cleo.git
 
 OGGM and tests
 ~~~~~~~~~~~~~~
