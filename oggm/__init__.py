@@ -1,36 +1,28 @@
 """ OGGM package.
 
-Copyright: OGGM developers, 2014-2015
+Copyright: OGGM e.V. and OGGM Contributors
 
-License: GPLv3+
+License: BSD-3-Clause
 """
-from __future__ import absolute_import, division
-import logging
-
-from oggm.utils import GlacierDirectory, entity_task, divide_task
-
-
+# flake8: noqa
+from pkg_resources import get_distribution, DistributionNotFound
 try:
-    from .version import version as __version__
-except ImportError:  # pragma: no cover
-    raise ImportError('oggm is not properly installed. If you are running '
-                      'from the source directory, please instead create a '
-                      'new virtual environment (using conda or virtualenv) '
-                      'and  then install it in-place by running: '
-                      'pip install -e .')
+    __version__ = get_distribution(__name__).version
+except DistributionNotFound:
+    # package is not installed
+    pass
+finally:
+    del get_distribution, DistributionNotFound
 
-
-# Basic config
-logging.basicConfig(format='%(asctime)s: %(name)s: %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG)
-
-# Fiona, rasterio and shapely are spammers
-logging.getLogger("Fiona").setLevel(logging.WARNING)
-logging.getLogger("shapely").setLevel(logging.WARNING)
-logging.getLogger("rasterio").setLevel(logging.WARNING)
 
 try:
     from oggm.mpi import _init_oggm_mpi
     _init_oggm_mpi()
 except ImportError:
     pass
+
+# API
+# TODO: why are some funcs here? maybe reconsider what API actually is
+from oggm.utils import entity_task, global_task, GlacierDirectory
+from oggm.core.centerlines import Centerline
+from oggm.core.flowline import Flowline

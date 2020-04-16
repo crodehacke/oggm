@@ -3,139 +3,64 @@
    Adapted from the Python Packaging Authority template."""
 
 from setuptools import setup, find_packages  # Always prefer setuptools
-from codecs import open  # To use a consistent encoding
-from os import path, walk
-import importlib
 
-MAJOR = 0
-MINOR = 1
-MICRO = 1
-ISRELEASED = False
-VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
-QUALIFIER = ''
 
 DISTNAME = 'oggm'
-LICENSE = 'GPLv3+'
-AUTHOR = 'oggm Developers'
+LICENSE = 'BSD-3-Clause'
+AUTHOR = 'OGGM Contributors'
 AUTHOR_EMAIL = 'fabien.maussion@uibk.ac.at'
 URL = 'http://oggm.org'
 CLASSIFIERS = [
         # How mature is this project? Common values are
         # 3 - Alpha  4 - Beta  5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         # Indicate who your project is intended for
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: GNU General Public License ' +
-        'v3 or later (GPLv3+)',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
+        'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ]
 
 DESCRIPTION = 'Open Global Glacier Model'
 LONG_DESCRIPTION = """
-OGGM builds upon `Marzeion et al., (2012)`_ and intends to become a
-global scale, modular, and open source model for glacier dynamics. The model
-accounts for glacier geometry (including contributory branches) and includes
-a simple (yet explicit) ice dynamics module. It can simulate past and
-future mass-balance, volume and geometry of any glacier in a fully
-automated workflow. We rely exclusively on publicly available data for
-calibration and validation.
+**OGGM is a modular open source model for glacier dynamics**
 
-The project is currently in intense development. Get in touch with us if
-you want to contribute.
-
-.. _Marzeion et al., (2012): http://www.the-cryosphere.net/6/1295/2012/tc-6-1295-2012.html
+The model accounts for glacier geometry (including contributory branches) and
+includes an explicit ice dynamics module. It can simulate past and
+future mass-balance, volume and geometry of (almost) any glacier in the world
+in a fully automated and extensible workflow. We rely exclusively on publicly
+available data for calibration and validation.
 
 Links
 -----
-- HTML documentation: http://oggm.org
+- Project website: http://oggm.org
+- HTML documentation: http://docs.oggm.org
 - Source code: http://github.com/oggm/oggm
 """
 
-# code to extract and write the version copied from pandas
-FULLVERSION = VERSION
-write_version = True
 
-if not ISRELEASED:
-    FULLVERSION += '.dev'
-else:
-    FULLVERSION += QUALIFIER
-
-
-def write_version_py(filename=None):
-    cnt = """\
-version = '%s'
-short_version = '%s'
-"""
-    if not filename:
-        filename = path.join(path.dirname(__file__), 'oggm', 'version.py')
-
-    a = open(filename, 'w')
-    try:
-        a.write(cnt % (FULLVERSION, VERSION))
-    finally:
-        a.close()
-
-
-if write_version:
-    write_version_py()
-
-
-def check_dependencies(package_names):
-    """Check if packages can be imported, if not throw a message."""
-    not_met = []
-    for n in package_names:
-        try:
-            _ = importlib.import_module(n)
-        except ImportError:
-            not_met.append(n)
-    if len(not_met) != 0:
-        errmsg = "Warning: the following packages could not be found: "
-        print(errmsg + ', '.join(not_met))
-
-
-req_packages = ['six',
-                'numpy',
+req_packages = ['numpy',
                 'scipy',
-                'pyproj',
                 'pandas',
-                'geopandas',
-                'fiona',
-                'matplotlib',
-                'scikit-image',
-                'Pillow',
-                'joblib',
-                'netCDF4',
+                'matplotlib>=2.0.0',
                 'shapely',
-                'rasterio',
+                'requests',
                 'configobj',
-                'nose',
+                'netcdf4',
                 'xarray',
-                'progressbar2',
-                'filelock']
-check_dependencies(req_packages)
+                ]
 
-
-def file_walk(top, remove=''):
-    """
-    Returns a generator of files from the top of the tree, removing
-    the given prefix from the root/file result.
-    """
-    top = top.replace('/', path.sep)
-    remove = remove.replace('/', path.sep)
-    for root, dirs, files in walk(top):
-        for file in files:
-            yield path.join(root, file).replace(remove, '')
 
 setup(
     # Project info
     name=DISTNAME,
-    version=FULLVERSION,
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
+    # Version info
+    setup_requires=['setuptools_scm', 'setuptools_scm_git_archive'],
+    use_scm_version=True,
     # The project's main homepage.
     url=URL,
     # Author details
@@ -146,18 +71,23 @@ setup(
     classifiers=CLASSIFIERS,
     # What does your project relate to?
     keywords=['geosciences', 'glaciers', 'climate', 'gis'],
+    # We are a python 3 only shop
+    python_requires='>=3.5',
     # Find packages automatically
     packages=find_packages(exclude=['docs']),
-    # Decided not to let pip install the dependencies, this is too brutal
-    install_requires=[],
+    # Include package data
+    include_package_data=True,
+    # Install dependencies
+    install_requires=req_packages,
     # additional groups of dependencies here (e.g. development dependencies).
     extras_require={},
-    # data files that need to be installed
-    package_data={'oggm.tests': list(file_walk('oggm/tests/baseline_images',
-                                               remove='oggm/tests/')),
-                  'oggm': ['params.cfg']},
-    # Old
-    data_files=[],
     # Executable scripts
-    entry_points={},
+    entry_points={
+        'pytest11': ['pytest_oggm = oggm.pytest_plugin'],
+        'console_scripts': [
+            'oggm_prepro = oggm.cli.prepro_levels:main',
+            'oggm_benchmark = oggm.cli.benchmark:main',
+            'oggm_netrc_credentials = oggm.cli.netrc_credentials:cli',
+        ],
+    },
 )

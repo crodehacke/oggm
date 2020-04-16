@@ -102,8 +102,8 @@ Contributing to the code base
 Code standards
 --------------
 
-OGGM uses the `PEP8 <http://www.python.org/dev/peps/pep-0008/>`_ standard, as
-far as possible. There are several tools to ensure you abide by this standard,
+OGGM uses the `PEP8 <http://www.python.org/dev/peps/pep-0008/>`_ standard.
+There are several tools to ensure you abide by this standard,
 and some IDE (for example PyCharm) will warn you if you don't follow PEP8.
 
 Test-driven development/code writing
@@ -111,8 +111,8 @@ Test-driven development/code writing
 
 OGGM is serious about testing and strongly encourages contributors to embrace
 `test-driven development (TDD) <http://en.wikipedia.org/wiki/Test-driven_development>`_.
-Like many packages, OGGM uses the `Nose testing system
-<https://nose.readthedocs.io/en/latest/index.html>`_
+Like many packages, OGGM uses the `pytest testing system
+<http://doc.pytest.org/en/latest/>`_
 and the convenient
 extensions in `numpy.testing
 <http://docs.scipy.org/doc/numpy/reference/routines.testing.html>`_.
@@ -127,16 +127,25 @@ Running the test suite
 
 The tests can then be run directly inside your Git clone by typing::
 
-    nosetests .
+    pytest .
 
 The tests can run for several minutes. If everything worked fine, you
 should see something like::
 
-    ...............S.S..................S......................SSS..SSS.SSSSS.SSS
-    ----------------------------------------------------------------------
-    Ran 77 tests in 401.080s
+    ==== test session starts ====
+    platform linux -- Python 3.4.3, pytest-3.0.5, py-1.4.31, pluggy-0.4.0
+    rootdir:
+    plugins:
+    collected 92 items
 
-    OK (SKIP=17)
+    oggm/tests/test_graphics.py ..............
+    oggm/tests/test_models.py .........s....sssssssssssssssss
+    oggm/tests/test_prepro.py ...s................s.s...
+    oggm/tests/test_utils.py ...sss..ss.sssss.
+    oggm/tests/test_workflow.py ssss
+
+    ===== 57 passed, 35 skipped in 102.50 seconds ====
+
 
 You can safely ignore deprecation warnings and other DLL messages as long as
 the tests end with ``OK``.
@@ -145,9 +154,9 @@ Often it is worth running only a subset of tests first around your changes
 before running the entire suite.
 This is done using one of the following constructs::
 
-    nosetests oggm/tests/[test-module].py
-    nosetests oggm/tests/[test-module].py:[TestClass]
-    nosetests oggm/tests/[test-module].py:[TestClass].[test_method]
+    pytest oggm/tests/[test-module].py
+    pytest oggm/tests/[test-module].py:[TestClass]
+    pytest oggm/tests/[test-module].py:[TestClass].[test_method]
 
 
 Contributing to the documentation
@@ -197,12 +206,17 @@ Requirements
 ~~~~~~~~~~~~
 
 There are some extra requirements to build the docs: you will need to
-have ``sphinx``, ``numpydoc`` and ``ipython`` installed.
+have ``sphinx``, ``sphinx_rtd_theme``, ``numpydoc`` and ``ipython`` installed.
 
-If you have a conda environment named ``oggm-env``, you can install the extra
+If you have a conda environment named ``oggm_env``, you can install the extra
 requirements with::
 
-      conda install -n oggm-env sphinx ipython numpydoc
+      conda install -n oggm_env sphinx sphinx_rtd_theme ipython numpydoc
+
+If you use pip, activate your python environment and install the requirements
+with::
+
+      pip install sphinx sphinx_rtd_theme ipython numpydoc
 
 
 Building the documentation
